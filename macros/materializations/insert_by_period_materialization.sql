@@ -7,11 +7,11 @@
   {% call statement('period_boundaries', fetch_result=True) -%}
     with data as (
       select
-          coalesce(max("{{timestamp_field}}"), '{{start_date}}')::timestamp as start_timestamp,
+          cast(coalesce(max("{{timestamp_field}}"), '{{start_date}}') as timestamp) as start_timestamp,
           coalesce(
             {{dbt_utils.dateadd('millisecond',
                                 -1,
-                                "nullif('" ~ stop_date ~ "','')::timestamp")}},
+                                "cast(nullif('" ~ stop_date ~ "','') as timestamp)")}},
             {{dbt_utils.current_timestamp()}}
           ) as stop_timestamp
       from "{{target_schema}}"."{{target_table}}"
@@ -35,9 +35,9 @@
 {% macro default__get_period_sql(target_cols_csv, sql, timestamp_field, period, start_timestamp, stop_timestamp, offset) -%}
 
   {%- set period_filter -%}
-    ("{{timestamp_field}}" >  '{{start_timestamp}}'::timestamp + interval '{{offset}} {{period}}' and
-     "{{timestamp_field}}" <= '{{start_timestamp}}'::timestamp + interval '{{offset}} {{period}}' + interval '1 {{period}}' and
-     "{{timestamp_field}}" <  '{{stop_timestamp}}'::timestamp)
+    ("{{timestamp_field}}" >  cast('{{start_timestamp}}' as timestamp) + interval '{{offset}} {{period}}' and
+     "{{timestamp_field}}" <= cast('{{start_timestamp}}' as timestamp) + interval '{{offset}} {{period}}' + interval '1 {{period}}' and
+     "{{timestamp_field}}" <  cast('{{stop_timestamp}}' as timestamp))
   {%- endset -%}
 
   {%- set filtered_sql = sql | replace("__PERIOD_FILTER__", period_filter) -%}
